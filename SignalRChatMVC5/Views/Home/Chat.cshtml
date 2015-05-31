@@ -1,0 +1,65 @@
+﻿
+@{
+    ViewBag.Title = "Chat";
+}
+
+<h2>Chat</h2>
+<div class="container">
+    <input type="text" id="message" />
+    <input type="button" id="sendmessage" value="Send" />
+    <input type="hidden" id="displayname" />
+    <ul id="discussion">
+    </ul>
+</div>
+@section scripts {
+    <!-- Script references -->
+    <!-- The jQuery library is requred and is refernced by default in _Layout.cshtml -->
+    
+    <!-- Reference the SignalR library -->
+    <script src="~/Scripts/jquery.signalR-2.2.0.min.js"></script>
+    
+    <!-- Reference the auto-generated SignalR hub scripts -->
+    <script src="~/signalr/hubs"></script>
+
+    <script>
+        // On Page Load Finished Event Handler
+        $(function () {
+            // Reference the auto-generated proxy for the hub.
+            var chathub = $.connection.chatHub;
+
+            // Create a function that the ChatHub can call back to display messages.
+            chathub.client.addNewMessageToPage = function (name, message) {
+
+                // Add the message to the pane (unordered list)
+                $('#discussion').append('<li><strong>' + htmlEncode(name) +
+                                        '</strong>: ' + htmlEncode(message) + '</li>');
+            };
+
+            // Get the user name and store it to prepend to messages
+            $('#displayname').val(prompt('Please enter your name:', 'Your Name ...'));
+
+            // Set the initial focus to message input box
+            $('#message').focus();
+
+            // Start the Websocket (SignalR) connection to the chatHub
+            $.connection.hub.start().done(function () {
+                $('#sendmessage').click(function () {
+
+                    // Call the Send method in the ASP.NET ChatHub instance
+                    chathub.server.send($('#displayname').val(), $('#message').val());
+
+                    // Clear text vbox and reset focus for next comment
+                    $('#message').val('').focus();
+                });
+
+            });
+        });
+
+        // This optional function html-encodes messages for display in the page.
+        function htmlEncode(value)
+        {
+            var encodedValue = $('<div />').text(value).html();
+            return encodedValue;
+        }
+    </script>
+}
